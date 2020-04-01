@@ -75,13 +75,11 @@ end
 
 function realAttacherJoints:onLoad(savegame)
   self.realAttacherJoints = {}
-  self.realAttacherJoints.base = {}
-  self.realAttacherJoints.green_line = {}
-  self.realAttacherJoints.red_line = {}
 
-  --self.realAttacherJoints.base.img = createImageOverlay(realAttacherJoints.modDir .. "base.png")
-  --self.realAttacherJoints.green_line.img = createImageOverlay(realAttacherJoints.modDir .. "green_line.png")
-  --self.realAttacherJoints.red_line.img = createImageOverlay(realAttacherJoints.modDir .. "red_line.png")
+  self.realAttacherJoints.square_img = createImageOverlay(realAttacherJoints.modDir .. "gui/sqr.dds")
+  self.realAttacherJoints.numbers_img = createImageOverlay(realAttacherJoints.modDir .. "gui/numbers.dds")
+  self.realAttacherJoints.greenPoint_img = createImageOverlay(realAttacherJoints.modDir .. "gui/greenPoint.dds")
+  self.realAttacherJoints.redPoint_img = createImageOverlay(realAttacherJoints.modDir .. "gui/redPoint.dds")
 
   self.realAttacherJoints.texts = {}
 
@@ -92,11 +90,6 @@ function realAttacherJoints:onLoad(savegame)
   --self.realAttacherJoints.texts.setHeight = g_i18n:getText("input_SET_HEIGHT")
   --self.realAttacherJoints.texts.goToSavedHeight = g_i18n:getText("input_GO_TO_SAVED_HEIGHT")
   --self.realAttacherJoints.texts.toggleManualControl = g_i18n:getText("input_TOGGLE_MANUAL_CONTROL")
-
-  realAttacherJoints.green_line = {}
-  realAttacherJoints.green_line.y = nil
-  realAttacherJoints.red_line = {}
-  realAttacherJoints.red_line.y = nil
 
   realAttacherJoints.implements = {}
 
@@ -202,6 +195,7 @@ function realAttacherJoints:onPostAttach(attacherVehicle, inputJointDescIndex, j
         realAttacherJoints.implements[implement].jointDesc = spec.jointDesc -- Store jointDesc data for toggle manual control (AI)
       end
       realAttacherJoints.implements[implement].isControllable = true
+      spec.jointDesc.lowerRotationOffset = spec.jointDesc.upperRotationOffset
       -- Save default groundReferenceNode force and powerConsumer maxForce for dynamic force
       local specPowerConsumer = self.spec_powerConsumer
       local specGRN = self.spec_groundReference
@@ -228,16 +222,6 @@ function realAttacherJoints:onPostAttach(attacherVehicle, inputJointDescIndex, j
 end
 
 function realAttacherJoints:onAIImplementStart()
-  --[[local spec = self.spec_attacherJointControl
-  inputAttacherJoints[self:getFullName()].jointDesc.index = spec.jointDesc.index
-  self:getInputAttacherJoints()[spec.jointDesc.index].isControllable = false
-  if spec.jointDesc ~= nil then
-    spec.jointDesc.allowsLowering = spec.jointDesc.allowsLoweringBackup
-    spec.jointDesc.upperRotationOffset = spec.jointDesc.upperRotationOffsetBackup
-    spec.jointDesc.lowerRotationOffset = spec.jointDesc.lowerRotationOffsetBackup
-    spec.jointDesc = nil
-  end]]
-
   local spec = self.spec_attacherJointControl
   local inputAttacherJoints = self:getInputAttacherJoints()
   inputAttacherJoints[spec.jointDesc.index].isControllable = false
@@ -247,20 +231,15 @@ function realAttacherJoints:onAIImplementStart()
     spec.jointDesc.lowerRotationOffset = spec.jointDesc.lowerRotationOffsetBackup
     spec.jointDesc = nil
   end
-  realAttacherJoints.implements[self:getFullName()].isControllable = false
-  self:requestActionEventUpdate()
-
-  --realAttacherJoints:disableManualControl(self)
 end
 
 function realAttacherJoints:onAIImplementEnd()
-  --[[local spec = self.spec_attacherJointControl
+  local spec = self.spec_attacherJointControl
   local inputAttacherJoints = self:getInputAttacherJoints()
-  local implement = tostring(self:getFullName())
-  local index = realAttacherJoints.implements[implement].jointDesc.index
+  local index = realAttacherJoints.implements[self:getFullName()].jointDesc.index
   inputAttacherJoints[index].isControllable = true
   if inputAttacherJoints[index] ~= nil and inputAttacherJoints[index].isControllable then
-    local jointDesc = realAttacherJoints.implements[implement].jointDesc
+    local jointDesc = realAttacherJoints.implements[self:getFullName()].jointDesc
     jointDesc.allowsLowering = true
     jointDesc.upperRotationOffsetBackup = jointDesc.upperRotationOffset
     jointDesc.lowerRotationOffsetBackup = jointDesc.lowerRotationOffset
@@ -270,8 +249,7 @@ function realAttacherJoints:onAIImplementEnd()
     end
     spec.heightTargetAlpha = spec.jointDesc.upperAlpha
     self:requestActionEventUpdate()
-  end]]
-  realAttacherJoints:enableManualControl(self)
+  end
 end
 
 function realAttacherJoints:onTurnedOn()
@@ -281,70 +259,51 @@ function realAttacherJoints:onTurnedOff()
 end
 
 function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnoreSelection, isSelected)
-  --[[local spec = self.spec_attacherJointControl
-  if spec ~= nil then
-    if spec.heightController ~= nil then
-      if self:getFullName() ~= nil then
-        if realAttacherJoints.implements[self:getFullName()] then
-          local moveAlpha = spec.heightController.moveAlpha
-          local presetHeightValue = realAttacherJoints.implements[self:getFullName()].presetHeightValue
-          local startY = realAttacherJoints.drawUtils.startOverlay
-          local endY = realAttacherJoints.drawUtils.endOverlay
-          if startY ~= nil and endY ~= nil then
-            realAttacherJoints.green_line.y = 1 - map(moveAlpha, 1, 0, startY, endY) - 0.5175
-            if presetHeightValue == nil then
-              realAttacherJoints.red_line.y = 1 - map(moveAlpha, 1, 0, startY, endY) - 0.5175
-            else
-              realAttacherJoints.red_line.y = 1 - map(presetHeightValue, 1, 0, startY, endY) - 0.5175
-            end
-          end
-        end
-      end
-    end
-  end]]
-  if self.typeName == "cultivator" or self.typeName == "plow" or self.typeName == "seeder" then
-    local spec = self.spec_attacherJointControl
-    local inputAttacherJoints = self:getInputAttacherJoints()
-    if spec.jointDesc then
-      if spec.jointDesc.index then
-        if inputAttacherJoints[spec.jointDesc.index] then
-          if inputAttacherJoints[spec.jointDesc.index].isControllable == true then -- Fix for helper
-            if spec ~= nil then
-              if spec.heightController ~= nil then
-                local moveAlpha = spec.heightController.moveAlpha
-                local specGRN = self.spec_groundReference
-                local specPowerConsumer = self.spec_powerConsumer
-                local implement = self:getFullName()
-                if implement ~= nil then
-                  if realAttacherJoints.implements[implement] then
-                    if specGRN ~= nil then
-                      if specGRN.hasForceFactors == true then
-                        for i=1,#specGRN.groundReferenceNodes do
-                          specGRN.groundReferenceNodes[i].forceFactor = realAttacherJoints.implements[implement].groundReferenceNode * moveAlpha * 4
-                        end
-                      elseif specPowerConsumer ~= nil then
-                        if specPowerConsumer.maxForce ~= nil then
-                          specPowerConsumer.maxForce = realAttacherJoints.implements[implement].maxForce + moveAlpha * 75
+  if not self:getIsAIActive() then
+    if self.typeName == "cultivator" or self.typeName == "plow" or self.typeName == "seeder" then
+      local spec = self.spec_attacherJointControl
+      local inputAttacherJoints = self:getInputAttacherJoints()
+      if spec.jointDesc then
+        if spec.jointDesc.index then
+          if inputAttacherJoints[spec.jointDesc.index] then
+            if inputAttacherJoints[spec.jointDesc.index].isControllable == true then -- Fix for helper
+              if spec ~= nil then
+                if spec.heightController ~= nil then
+                  local moveAlpha = spec.heightController.moveAlpha
+                  local specGRN = self.spec_groundReference
+                  local specPowerConsumer = self.spec_powerConsumer
+                  local implement = self:getFullName()
+                  if implement ~= nil then
+                    if realAttacherJoints.implements[implement] then
+                      if specGRN ~= nil then
+                        if specGRN.hasForceFactors == true then
+                          for i=1,#specGRN.groundReferenceNodes do
+                            specGRN.groundReferenceNodes[i].forceFactor = realAttacherJoints.implements[implement].groundReferenceNode * moveAlpha * 2
+                          end
+                        elseif specPowerConsumer ~= nil then
+                          if specPowerConsumer.maxForce ~= nil then
+                            specPowerConsumer.maxForce = realAttacherJoints.implements[implement].maxForce + moveAlpha * 75
+                          end
                         end
                       end
+                      -- Follow the ground (?) to be polished
+                      --[[if self.spec_groundReference.groundReferenceNodes[1].depth <= 0 then
+                        local spec = self.spec_attacherJointControl
+                        local jointDesc = spec.jointDesc
+                        if moveAlpha == nil then
+                          moveAlpha = jointDesc.moveAlpha
+                        end
+                          moveAlpha = MathUtil.clamp(moveAlpha, jointDesc.upperAlpha, jointDesc.lowerAlpha)
+                        if jointDesc.rotationNode ~= nil then
+                          setRotation(jointDesc.rotationNode, MathUtil.vector3ArrayLerp(jointDesc.upperRotation, jointDesc.lowerRotation, moveAlpha))
+                        end
+                        if jointDesc.rotationNode2 ~= nil then
+                          setRotation(jointDesc.rotationNode2, MathUtil.vector3ArrayLerp(jointDesc.upperRotation2, jointDesc.lowerRotation2, moveAlpha))
+                        end
+                        --spec.lastHeightAlpha = moveAlpha
+                        spec.heightTargetAlpha = moveAlpha
+                      end]]
                     end
-                    -- Follow the ground (?) to be polished
-                    --[[if self.spec_groundReference.groundReferenceNodes[1].depth <= 0 then
-                      local spec = self.spec_attacherJointControl
-                      local jointDesc = spec.jointDesc
-                      if moveAlpha == nil then
-                        moveAlpha = jointDesc.moveAlpha
-                      end
-                        moveAlpha = MathUtil.clamp(moveAlpha, jointDesc.upperAlpha, jointDesc.lowerAlpha)
-                      if jointDesc.rotationNode ~= nil then
-                        setRotation(jointDesc.rotationNode, MathUtil.vector3ArrayLerp(jointDesc.upperRotation, jointDesc.lowerRotation, moveAlpha))
-                      end
-                      if jointDesc.rotationNode2 ~= nil then
-                        setRotation(jointDesc.rotationNode2, MathUtil.vector3ArrayLerp(jointDesc.upperRotation2, jointDesc.lowerRotation2, moveAlpha))
-                      end
-                      --spec.lastHeightAlpha = moveAlpha
-                      spec.heightTargetAlpha = moveAlpha
-                    end]]
                   end
                 end
               end
@@ -352,6 +311,12 @@ function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnor
           end
         end
       end
+    end
+  end
+  if Input.isKeyPressed(Input.KEY_lctrl) and Input.isKeyPressed(Input.KEY_1) then
+    for k,v in pairs(self.spec_attacherJointControl.jointDesc.lowerRotLimit) do
+      print(k)
+      print(v)
     end
   end
 end
@@ -365,7 +330,9 @@ function realAttacherJoints:SetHeight()
       -- Save height value by implement name - Not sure it's the best way
       if implement ~= nil and spec.heightController.moveAlpha ~= nil then
         realAttacherJoints.implements[implement].presetHeightValue = spec.heightController.moveAlpha
-        realAttacherJoints.implements[implement].groundDepth = self.spec_groundReference.groundReferenceNodes[1].depth
+        if self.spec_groundReference then
+          realAttacherJoints.implements[implement].groundDepth = self.spec_groundReference.groundReferenceNodes[1].depth
+        end
       end
     end
   end
@@ -452,25 +419,63 @@ function realAttacherJoints:getIsLowered(superFunc, default)
 end
 
 function realAttacherJoints:onDraw()
-  -- local spec = self.realAttacherJoints
-  -- if self.isClient and self:getIsActive() then
-	-- 	local uiScale = g_gameSettings:getValue("uiScale")
-	-- 	local iconWidth = 0.0264 * uiScale
-	-- 	local iconHeight = iconWidth * g_screenAspectRatio * 3
-	-- 	local cruiseOverlay = g_currentMission.inGameMenu.hud.speedMeter.overlay
-	-- 	local startX_1 = cruiseOverlay.x + cruiseOverlay.width * 0.65
-	-- 	local startY = cruiseOverlay.y + cruiseOverlay.height * 0.9
-  --
-  --   realAttacherJoints.drawUtils.startOverlay = 0.747
-  --   realAttacherJoints.drawUtils.endOverlay = 0.62
-  --
-  --   renderOverlay(spec.base.img, startX_1, startY, iconWidth, iconHeight)
-  --   if realAttacherJoints.green_line.y ~= nil and realAttacherJoints.red_line.y ~= nil then
-  --     renderOverlay(spec.green_line.img, startX_1, realAttacherJoints.green_line.y, iconWidth, iconHeight)
-  -- 		renderOverlay(spec.red_line.img, startX_1, realAttacherJoints.red_line.y, iconWidth, iconHeight)
-  --   end
-  -- end
+  if self.isClient and self:getIsActive() and not g_gui:getIsGuiVisible() and not self:getIsAIActive() then
+    local spec = self.spec_attacherJointControl
+    local uiScale = g_gameSettings:getValue("uiScale")
+
+    local iconWidth = 0.01 * uiScale
+    local iconHeight = iconWidth * g_screenAspectRatio * 7
+    local iconWidthPoint = 0.005 * uiScale
+    local iconHeightPoint = iconWidth * g_screenAspectRatio / 2
+
+    local cruiseOverlay = g_currentMission.inGameMenu.hud.speedMeter.overlay
+    local startX_1 = cruiseOverlay.x + cruiseOverlay.width * 0.65
+    local startX_2 = cruiseOverlay.x + cruiseOverlay.width * 0.65 + 0.0075
+  	local startY = cruiseOverlay.y + cruiseOverlay.height * 0.9
+
+    realAttacherJoints.drawUtils.startOverlay = startY - iconHeight
+    realAttacherJoints.drawUtils.endOverlay = startY + iconHeight
+
+    local fontSize = g_gameSettings:getValue("uiScale") * 0.0125
+
+    local angle = 0
+
+    if self.spec_attacherJointControl.jointDesc then
+      angle = round((self.spec_attacherJointControl.jointDesc.lowerRotationOffset * -1 * 180) / math.pi)
+    end
+
+    setTextBold(true)
+    setTextColor(1, 1, 1, 1)
+    renderText((startX_1+startX_2)/2, startY + iconHeight, fontSize, angle.."°")
+
+    --[[
+    setTextBold(false)
+    setTextColor(1, 1, 1, 1)
+    local increment = iconHeight/10
+    for i=1,9 do
+      local fontSize = g_gameSettings:getValue("uiScale") * 0.01
+      renderText(startX_1 - 0.01, startY - 0.005 + increment * i, fontSize, i .. "-")
+    end]]
+
+    --renderOverlay(self.realAttacherJoints.numbers_img, startX_1 - 0.05, startY, iconWidth, iconHeight)
+    renderOverlay(self.realAttacherJoints.square_img, startX_1, startY, iconWidth, iconHeight)
+    if spec.heightController.moveAlpha then
+      renderOverlay(self.realAttacherJoints.greenPoint_img, startX_1+0.0025, map(spec.heightController.moveAlpha, 1, 0, startY + 0.0085, startY + iconHeight - 0.017), iconWidthPoint, iconHeightPoint)
+    end
+    renderOverlay(self.realAttacherJoints.square_img, startX_2, startY, iconWidth, iconHeight)
+    if self:getFullName() then
+      if realAttacherJoints.implements then
+        if realAttacherJoints.implements[self:getFullName()] then
+          presetHeightValue = Utils.getNoNil(realAttacherJoints.implements[self:getFullName()].presetHeightValue, 1)
+        end
+      end
+    end
+    if presetHeightValue ~= nil then
+      renderOverlay(self.realAttacherJoints.redPoint_img, startX_2+0.0025, map(presetHeightValue, 1, 0, startY + 0.0085, startY + iconHeight - 0.017), iconWidthPoint, iconHeightPoint)
+    end
+  end
 end
+
 function realAttacherJoints:deleteMap()
 end
 function realAttacherJoints:mouseEvent(posX, posY, isDown, isUp, button)
@@ -513,6 +518,10 @@ end
 
 function map(x, in_min, in_max, out_min, out_max)
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+end
+
+function round(x)
+  return x>=0 and math.floor(x+0.5) or math.ceil(x-0.5)
 end
 
 addModEventListener(realAttacherJoints)
