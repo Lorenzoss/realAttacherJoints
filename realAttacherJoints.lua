@@ -42,9 +42,9 @@ function realAttacherJoints:onRegisterActionEvents(isActiveForInput, isActiveFor
     local spec = self.spec_attacherJointControl
     --self:clearActionEventsTable(spec.actionEvents)
     if isActiveForInputIgnoreSelection then
-      local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.TOGGLE_MANUAL_CONTROL, self, realAttacherJoints.ToggleManualControl, false, true, false, true, nil)
-      g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
-      g_inputBinding:setActionEventTextVisibility(actionEventId, true)
+      --local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.TOGGLE_MANUAL_CONTROL, self, realAttacherJoints.ToggleManualControl, false, true, false, true, nil)
+      --g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
+      --g_inputBinding:setActionEventTextVisibility(actionEventId, true)
       realAttacherJoints.updateImplementControllabe(self)
     end
   end
@@ -76,10 +76,8 @@ end
 function realAttacherJoints:onLoad(savegame)
   self.realAttacherJoints = {}
 
-  self.isActive = nil
-
   self.realAttacherJoints.square_img = createImageOverlay(realAttacherJoints.modDir .. "gui/sqr.dds")
-  self.realAttacherJoints.numbers_img = createImageOverlay(realAttacherJoints.modDir .. "gui/numbers.dds")
+  --self.realAttacherJoints.numbers_img = createImageOverlay(realAttacherJoints.modDir .. "gui/numbers.dds")
   self.realAttacherJoints.greenPoint_img = createImageOverlay(realAttacherJoints.modDir .. "gui/greenPoint.dds")
   self.realAttacherJoints.redPoint_img = createImageOverlay(realAttacherJoints.modDir .. "gui/redPoint.dds")
 
@@ -309,19 +307,12 @@ function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnor
       end
     end
   end
-  --[[if Input.isKeyPressed(Input.KEY_lctrl) and Input.isKeyPressed(Input.KEY_1) then
-    --print(self.spec_attacherJointControl.maxTiltAngle)
-    --print(self.spec_attacherJointControl.controls[2].moveAlpha)
-    local maxTiltAngle = self.spec_attacherJointControl.maxTiltAngle/2
-    local angleRadiant = map(self.spec_attacherJointControl.controls[2].moveAlpha, 0, 1, maxTiltAngle * -1, maxTiltAngle)
-    --print(self.spec_attacherJointControl.jointDesc.lowerRotationOffset)
-    local angle = round((angleRadiant * 1 * 180) / math.pi)
-    print(angle)
-  end]]
+  if Input.isKeyPressed(Input.KEY_lctrl) and Input.isKeyPressed(Input.KEY_1) then
+  end
 end
 
 function realAttacherJoints:SetHeight()
-  print("Save Height Value")
+  --print("Save Height Value")
   local implement = self:getFullName()
   if implement ~= nil then
     if realAttacherJoints.implements[implement].isControllable == true then
@@ -338,7 +329,7 @@ function realAttacherJoints:SetHeight()
 end
 
 function realAttacherJoints:GoToSavedHeight()
-  print("Go to saved height")
+  --print("Go to saved height")
   local implement = self:getFullName()
   if implement ~= nil then
     if realAttacherJoints.implements[implement].isControllable == true then
@@ -418,7 +409,7 @@ function realAttacherJoints:getIsLowered(superFunc, default)
 end
 
 function realAttacherJoints:onDraw()
-  if self.isClient and self:getIsActive() and not g_gui:getIsGuiVisible() and not self:getIsAIActive() and self.isActive then
+  if self.isClient and self:getIsActive() and not g_gui:getIsGuiVisible() and not self:getIsAIActive() then
     local spec = self.spec_attacherJointControl
     local isControllable = false
     for i=1,#self:getInputAttacherJoints() do
@@ -471,7 +462,6 @@ function realAttacherJoints:onDraw()
         local fontSize = g_gameSettings:getValue("uiScale") * 0.01
         renderText(startX_1 - 0.01, startY - 0.005 + increment * i, fontSize, i .. "-")
       end]]
-
       --renderOverlay(self.realAttacherJoints.numbers_img, startX_1 - 0.05, startY, iconWidth, iconHeight)
       renderOverlay(self.realAttacherJoints.square_img, startX_1, startY, iconWidth, iconHeight)
       if spec.heightController.moveAlpha then
@@ -510,7 +500,6 @@ function realAttacherJoints:disableManualControl(self)
     spec.jointDesc = nil
   end
   realAttacherJoints.implements[self:getFullName()].isControllable = false
-  self.isActive = false
   self:requestActionEventUpdate()
 end
 
@@ -530,7 +519,6 @@ function realAttacherJoints:enableManualControl(self)
     end
     spec.heightTargetAlpha = spec.jointDesc.upperAlpha self:requestActionEventUpdate()
   end
-  self.isActive = true
   realAttacherJoints.implements[self:getFullName()].isControllable = true
 end
 

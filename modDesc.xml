@@ -40,15 +40,15 @@
       <en>Lower equipment</en>
       <it>Abbassa l'attrezzo</it>
     </text>
-    <text name="input_TOGGLE_MANUAL_CONTROL">
+    <!--<text name="input_TOGGLE_MANUAL_CONTROL">
       <en>Toggle manual control</en>
       <it>Attiva/Disattiva controllo manuale</it>
-    </text>
+    </text>-->
   </l10n>
   <actions>
       <action name="AXIS_HEIGHT_IMPLEMENT" axisType="FULL"/>
       <action name="AXIS_TILT_IMPLEMENT" axisType="FULL"/>
-      <action name="TOGGLE_MANUAL_CONTROL" axisType="HALF"/>
+      <!--<action name="TOGGLE_MANUAL_CONTROL" axisType="HALF"/>-->
       <action name="SET_HEIGHT" axisType="HALF"/>
       <action name="GO_TO_SAVED_HEIGHT" axisType="HALF"/>
   </actions>
@@ -65,19 +65,15 @@
       <binding device="KB_MOUSE_DEFAULT" input="MOUSE_BUTTON_RIGHT AXIS_X" inputComponent="+" axisComponent="+" index="3"/>
       <binding device="KB_MOUSE_DEFAULT" input="MOUSE_BUTTON_RIGHT AXIS_X" inputComponent="-" axisComponent="-" index="3"/>
     </actionBinding>
-    <actionBinding action="TOGGLE_MANUAL_CONTROL">
+    <!--<actionBinding action="TOGGLE_MANUAL_CONTROL">
       <binding device="KB_MOUSE_DEFAULT" input="KEY_lctrl KEY_KP_enter"/>
-    </actionBinding>
+    </actionBinding>-->
     <actionBinding action="SET_HEIGHT">
       <binding device="KB_MOUSE_DEFAULT" input="KEY_lctrl KEY_KP_minus"/>
     </actionBinding>
     <actionBinding action="GO_TO_SAVED_HEIGHT">
       <binding device="KB_MOUSE_DEFAULT" input="KEY_lctrl KEY_KP_plus"/>
     </actionBinding>
-    <!--
-    <actionBinding action="TOGGLE_HUD">
-      <binding device="KB_MOUSE_DEFAULT" input="KEY_lshift KEY_k"/>
-    </actionBinding>-->
   </inputBinding>
 	<extraSourceFiles>
 		<sourceFile filename="realAttacherJointsRegister.lua" />
