@@ -76,28 +76,24 @@ end
 function realAttacherJoints:onLoad(savegame)
   self.realAttacherJoints = {}
 
+  self.isActive = nil
+
   self.realAttacherJoints.square_img = createImageOverlay(realAttacherJoints.modDir .. "gui/sqr.dds")
   self.realAttacherJoints.numbers_img = createImageOverlay(realAttacherJoints.modDir .. "gui/numbers.dds")
   self.realAttacherJoints.greenPoint_img = createImageOverlay(realAttacherJoints.modDir .. "gui/greenPoint.dds")
   self.realAttacherJoints.redPoint_img = createImageOverlay(realAttacherJoints.modDir .. "gui/redPoint.dds")
 
   self.realAttacherJoints.texts = {}
-
-  --self.realAttacherJoints.texts.setHeight = "Imposta l'altezza dell'attrezzo"
-  --self.realAttacherJoints.texts.goToSavedHeight = "Alza/Abbassa attrezzo"
-  --self.realAttacherJoints.texts.toggleManualControl = "Attiva/Disattiva controllo manuale"
-
-  --self.realAttacherJoints.texts.setHeight = g_i18n:getText("input_SET_HEIGHT")
-  --self.realAttacherJoints.texts.goToSavedHeight = g_i18n:getText("input_GO_TO_SAVED_HEIGHT")
-  --self.realAttacherJoints.texts.toggleManualControl = g_i18n:getText("input_TOGGLE_MANUAL_CONTROL")
-
   realAttacherJoints.implements = {}
-
   realAttacherJoints.drawUtils = {}
 
   local spec = self.spec_attacherJointControl
   local isControllable = false
   for i=1,#self:getInputAttacherJoints() do
+    if self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
+      isControllable = false
+      break
+    end
     if self:getInputAttacherJoints()[i].topReferenceNode then
       isControllable = true
       break
@@ -286,7 +282,7 @@ function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnor
                           end
                         end
                       end
-                      -- Follow the ground (?) to be polished
+                      -- Follow the ground (?)
                       --[[if self.spec_groundReference.groundReferenceNodes[1].depth <= 0 then
                         local spec = self.spec_attacherJointControl
                         local jointDesc = spec.jointDesc
@@ -313,12 +309,15 @@ function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnor
       end
     end
   end
-  if Input.isKeyPressed(Input.KEY_lctrl) and Input.isKeyPressed(Input.KEY_1) then
-    for k,v in pairs(self.spec_attacherJointControl.jointDesc.lowerRotLimit) do
-      print(k)
-      print(v)
-    end
-  end
+  --[[if Input.isKeyPressed(Input.KEY_lctrl) and Input.isKeyPressed(Input.KEY_1) then
+    --print(self.spec_attacherJointControl.maxTiltAngle)
+    --print(self.spec_attacherJointControl.controls[2].moveAlpha)
+    local maxTiltAngle = self.spec_attacherJointControl.maxTiltAngle/2
+    local angleRadiant = map(self.spec_attacherJointControl.controls[2].moveAlpha, 0, 1, maxTiltAngle * -1, maxTiltAngle)
+    --print(self.spec_attacherJointControl.jointDesc.lowerRotationOffset)
+    local angle = round((angleRadiant * 1 * 180) / math.pi)
+    print(angle)
+  end]]
 end
 
 function realAttacherJoints:SetHeight()
@@ -419,59 +418,76 @@ function realAttacherJoints:getIsLowered(superFunc, default)
 end
 
 function realAttacherJoints:onDraw()
-  if self.isClient and self:getIsActive() and not g_gui:getIsGuiVisible() and not self:getIsAIActive() then
+  if self.isClient and self:getIsActive() and not g_gui:getIsGuiVisible() and not self:getIsAIActive() and self.isActive then
     local spec = self.spec_attacherJointControl
-    local uiScale = g_gameSettings:getValue("uiScale")
-
-    local iconWidth = 0.01 * uiScale
-    local iconHeight = iconWidth * g_screenAspectRatio * 7
-    local iconWidthPoint = 0.005 * uiScale
-    local iconHeightPoint = iconWidth * g_screenAspectRatio / 2
-
-    local cruiseOverlay = g_currentMission.inGameMenu.hud.speedMeter.overlay
-    local startX_1 = cruiseOverlay.x + cruiseOverlay.width * 0.65
-    local startX_2 = cruiseOverlay.x + cruiseOverlay.width * 0.65 + 0.0075
-  	local startY = cruiseOverlay.y + cruiseOverlay.height * 0.9
-
-    realAttacherJoints.drawUtils.startOverlay = startY - iconHeight
-    realAttacherJoints.drawUtils.endOverlay = startY + iconHeight
-
-    local fontSize = g_gameSettings:getValue("uiScale") * 0.0125
-
-    local angle = 0
-
-    if self.spec_attacherJointControl.jointDesc then
-      angle = round((self.spec_attacherJointControl.jointDesc.lowerRotationOffset * -1 * 180) / math.pi)
-    end
-
-    setTextBold(true)
-    setTextColor(1, 1, 1, 1)
-    renderText((startX_1+startX_2)/2, startY + iconHeight, fontSize, angle.."°")
-
-    --[[
-    setTextBold(false)
-    setTextColor(1, 1, 1, 1)
-    local increment = iconHeight/10
-    for i=1,9 do
-      local fontSize = g_gameSettings:getValue("uiScale") * 0.01
-      renderText(startX_1 - 0.01, startY - 0.005 + increment * i, fontSize, i .. "-")
-    end]]
-
-    --renderOverlay(self.realAttacherJoints.numbers_img, startX_1 - 0.05, startY, iconWidth, iconHeight)
-    renderOverlay(self.realAttacherJoints.square_img, startX_1, startY, iconWidth, iconHeight)
-    if spec.heightController.moveAlpha then
-      renderOverlay(self.realAttacherJoints.greenPoint_img, startX_1+0.0025, map(spec.heightController.moveAlpha, 1, 0, startY + 0.0085, startY + iconHeight - 0.017), iconWidthPoint, iconHeightPoint)
-    end
-    renderOverlay(self.realAttacherJoints.square_img, startX_2, startY, iconWidth, iconHeight)
-    if self:getFullName() then
-      if realAttacherJoints.implements then
-        if realAttacherJoints.implements[self:getFullName()] then
-          presetHeightValue = Utils.getNoNil(realAttacherJoints.implements[self:getFullName()].presetHeightValue, 1)
-        end
+    local isControllable = false
+    for i=1,#self:getInputAttacherJoints() do
+      if self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
+        isControllable = false
+        break
+      end
+      if self:getInputAttacherJoints()[i].topReferenceNode then
+        isControllable = true
+        break
       end
     end
-    if presetHeightValue ~= nil then
-      renderOverlay(self.realAttacherJoints.redPoint_img, startX_2+0.0025, map(presetHeightValue, 1, 0, startY + 0.0085, startY + iconHeight - 0.017), iconWidthPoint, iconHeightPoint)
+
+    if isControllable then
+      local uiScale = g_gameSettings:getValue("uiScale")
+
+      local iconWidth = 0.01 * uiScale
+      local iconHeight = iconWidth * g_screenAspectRatio * 7
+      local iconWidthPoint = 0.005 * uiScale
+      local iconHeightPoint = iconWidth * g_screenAspectRatio / 2
+
+      local cruiseOverlay = g_currentMission.inGameMenu.hud.speedMeter.overlay
+      local startX_1 = cruiseOverlay.x + cruiseOverlay.width * 0.65
+      local startX_2 = cruiseOverlay.x + cruiseOverlay.width * 0.65 + 0.0075
+    	local startY = cruiseOverlay.y + cruiseOverlay.height * 0.9
+
+      realAttacherJoints.drawUtils.startOverlay = startY - iconHeight
+      realAttacherJoints.drawUtils.endOverlay = startY + iconHeight
+
+      local fontSize = g_gameSettings:getValue("uiScale") * 0.0125
+
+      local angle = 0
+
+      if self.spec_attacherJointControl then
+        local maxTiltAngle = self.spec_attacherJointControl.maxTiltAngle/2
+        local angleRadiant = map(self.spec_attacherJointControl.controls[2].moveAlpha, 0, 1, maxTiltAngle * -1, maxTiltAngle)
+        angle = round((angleRadiant * 1 * 180) / math.pi)
+        --angle = round((self.spec_attacherJointControl.jointDesc.lowerRotationOffset * -1 * 180) / math.pi)
+      end
+
+      setTextBold(true)
+      setTextColor(1, 1, 1, 1)
+      renderText((startX_1+startX_2)/2, startY + iconHeight, fontSize, angle.."°")
+
+      --[[
+      setTextBold(false)
+      setTextColor(1, 1, 1, 1)
+      local increment = iconHeight/10
+      for i=1,9 do
+        local fontSize = g_gameSettings:getValue("uiScale") * 0.01
+        renderText(startX_1 - 0.01, startY - 0.005 + increment * i, fontSize, i .. "-")
+      end]]
+
+      --renderOverlay(self.realAttacherJoints.numbers_img, startX_1 - 0.05, startY, iconWidth, iconHeight)
+      renderOverlay(self.realAttacherJoints.square_img, startX_1, startY, iconWidth, iconHeight)
+      if spec.heightController.moveAlpha then
+        renderOverlay(self.realAttacherJoints.greenPoint_img, startX_1+0.0025, map(spec.heightController.moveAlpha, 1, 0, startY + 0.0085, startY + iconHeight - 0.017), iconWidthPoint, iconHeightPoint)
+      end
+      renderOverlay(self.realAttacherJoints.square_img, startX_2, startY, iconWidth, iconHeight)
+      if self:getFullName() then
+        if realAttacherJoints.implements then
+          if realAttacherJoints.implements[self:getFullName()] then
+            presetHeightValue = Utils.getNoNil(realAttacherJoints.implements[self:getFullName()].presetHeightValue, 1)
+          end
+        end
+      end
+      if presetHeightValue ~= nil then
+        renderOverlay(self.realAttacherJoints.redPoint_img, startX_2+0.0025, map(presetHeightValue, 1, 0, startY + 0.0085, startY + iconHeight - 0.017), iconWidthPoint, iconHeightPoint)
+      end
     end
   end
 end
@@ -494,6 +510,7 @@ function realAttacherJoints:disableManualControl(self)
     spec.jointDesc = nil
   end
   realAttacherJoints.implements[self:getFullName()].isControllable = false
+  self.isActive = false
   self:requestActionEventUpdate()
 end
 
@@ -513,6 +530,7 @@ function realAttacherJoints:enableManualControl(self)
     end
     spec.heightTargetAlpha = spec.jointDesc.upperAlpha self:requestActionEventUpdate()
   end
+  self.isActive = true
   realAttacherJoints.implements[self:getFullName()].isControllable = true
 end
 
