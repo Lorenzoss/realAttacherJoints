@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="46">
   <author>Lorenzos</author>
-  <version>0.5.1.0</version>
+  <version>0.5.2.0</version>
   <title>
     <en>Real Attacher Joints</en>
   </title>
@@ -14,7 +14,7 @@
     </en>
   </description>
   <iconFilename>icon_menu.dds</iconFilename>
-  <multiplayer supported="false"/>
+  <multiplayer supported="true"/>
   <l10n>
     <text name="input_AXIS_HEIGHT_IMPLEMENT_1">
       <en>Control the implement height</en>

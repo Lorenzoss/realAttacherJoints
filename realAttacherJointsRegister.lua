@@ -22,6 +22,7 @@ for vehicleName,vehicleType in pairs(g_vehicleTypeManager.vehicleTypes) do
       or true == SpecializationUtil.hasSpecialization(Tedder, vehicleType.specializations)
       or true == SpecializationUtil.hasSpecialization(TreePlanter, vehicleType.specializations)
       or true == SpecializationUtil.hasSpecialization(SowingMachine, vehicleType.specializations)
+      or true == SpecializationUtil.hasSpecialization(Trailer, vehicleType.specializations)
       then
         if false == SpecializationUtil.hasSpecialization(AttacherJointControl, vehicleType.specializations) then
           g_vehicleTypeManager:addSpecialization(vehicleName, "attacherJointControl")

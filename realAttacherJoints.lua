@@ -27,6 +27,7 @@ function realAttacherJoints.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onLoad", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onPreAttachImplement", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onPreAttach", realAttacherJoints)
+  SpecializationUtil.registerEventListener(vehicleType, "onPreDetach", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onPostAttach", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onAIImplementStart", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onAIImplementEnd", realAttacherJoints)
@@ -40,12 +41,25 @@ end
 function realAttacherJoints:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
   if self.isClient then
     local spec = self.spec_attacherJointControl
-    --self:clearActionEventsTable(spec.actionEvents)
-    if isActiveForInputIgnoreSelection then
-      --local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.TOGGLE_MANUAL_CONTROL, self, realAttacherJoints.ToggleManualControl, false, true, false, true, nil)
-      --g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
-      --g_inputBinding:setActionEventTextVisibility(actionEventId, true)
-      realAttacherJoints.updateImplementControllabe(self)
+    local isControllable = false
+    for i=1,#self:getInputAttacherJoints() do
+      if self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
+        isControllable = false
+        break
+      end
+      if self:getInputAttacherJoints()[i].topReferenceNode then
+        isControllable = true
+        break
+      end
+    end
+    if isControllable == true then
+      --self:clearActionEventsTable(spec.actionEvents)
+      if isActiveForInputIgnoreSelection then
+        --local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.TOGGLE_MANUAL_CONTROL, self, realAttacherJoints.ToggleManualControl, false, true, false, true, nil)
+        --g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
+        --g_inputBinding:setActionEventTextVisibility(actionEventId, true)
+        realAttacherJoints.updateImplementControllabe(self)
+      end
     end
   end
 end
@@ -175,6 +189,17 @@ function realAttacherJoints:onPreAttach(attacherVehicle, inputJointDescIndex, jo
     v.lockUpRotLimit = true
     v.lockDownRotLimit = true
   end
+  -- Fix for trailers bug
+  local xmlFilename = self.configFileName
+  local xmlFile = loadXMLFile("TempXML", xmlFilename)
+  local value = Utils.getNoNil(getXMLString(xmlFile, "vehicle.attachable.inputAttacherJoints.inputAttacherJoint#jointType"), false)
+  if value == "trailerLow" or value == "trailer" then
+    self.spec_attachable.inputAttacherJoints[1].fixedRotation = false
+    self.spec_attachable.inputAttacherJoints[1].upperRotationOffset = 0
+  end
+end
+
+function realAttacherJoints:onPreDetach(attacherVehicle, implement)
 end
 
 function realAttacherJoints:onPostAttach(attacherVehicle, inputJointDescIndex, jointDescIndex)
@@ -306,8 +331,6 @@ function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnor
         end
       end
     end
-  end
-  if Input.isKeyPressed(Input.KEY_lctrl) and Input.isKeyPressed(Input.KEY_1) then
   end
 end
 
