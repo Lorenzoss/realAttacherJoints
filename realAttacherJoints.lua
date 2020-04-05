@@ -471,9 +471,9 @@ function realAttacherJoints:onDraw()
       local iconHeightPoint = iconWidth * g_screenAspectRatio / 2
 
       local cruiseOverlay = g_currentMission.inGameMenu.hud.speedMeter.overlay
-      local startX_1 = cruiseOverlay.x + cruiseOverlay.width * 0.65
-      local startX_2 = cruiseOverlay.x + cruiseOverlay.width * 0.65 + 0.0075
-    	local startY = cruiseOverlay.y + cruiseOverlay.height * 0.9
+      local startX_1 = cruiseOverlay.x + cruiseOverlay.width * 0.65 - 0.02
+      local startX_2 = startX_1 + 0.0075
+      local startY = cruiseOverlay.y + cruiseOverlay.height * 0.9
 
       realAttacherJoints.drawUtils.startOverlay = startY - iconHeight
       realAttacherJoints.drawUtils.endOverlay = startY + iconHeight
@@ -481,17 +481,16 @@ function realAttacherJoints:onDraw()
       local fontSize = g_gameSettings:getValue("uiScale") * 0.0125
 
       local angle = 0
-
       if self.spec_attacherJointControl then
         local maxTiltAngle = self.spec_attacherJointControl.maxTiltAngle/2
         local angleRadiant = map(self.spec_attacherJointControl.controls[2].moveAlpha, 0, 1, maxTiltAngle * -1, maxTiltAngle)
         angle = round((angleRadiant * 1 * 180) / math.pi)
-        --angle = round((self.spec_attacherJointControl.jointDesc.lowerRotationOffset * -1 * 180) / math.pi)
+        local startX_mid = (startX_2+0.001)
+        setTextBold(true)
+        setTextColor(1, 1, 1, 1)
+        setTextAlignment(1) -- 1 = Centre alignment
+        renderText(startX_mid, startY + iconHeight, fontSize, angle.."°")
       end
-
-      setTextBold(true)
-      setTextColor(1, 1, 1, 1)
-      renderText((startX_1+startX_2)/2, startY + iconHeight, fontSize, angle.."°")
 
       --[[
       setTextBold(false)
