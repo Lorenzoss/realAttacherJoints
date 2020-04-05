@@ -189,13 +189,20 @@ function realAttacherJoints:onPreAttach(attacherVehicle, inputJointDescIndex, jo
     v.lockUpRotLimit = true
     v.lockDownRotLimit = true
   end
+
   -- Fix for trailers bug
   local xmlFilename = self.configFileName
   local xmlFile = loadXMLFile("TempXML", xmlFilename)
   local value = Utils.getNoNil(getXMLString(xmlFile, "vehicle.attachable.inputAttacherJoints.inputAttacherJoint#jointType"), false)
-  if value == "trailerLow" or value == "trailer" then
-    self.spec_attachable.inputAttacherJoints[1].fixedRotation = false
+  if value == "trailer" then
+    --self.spec_attachable.inputAttacherJoints[1].fixedRotation = false
     self.spec_attachable.inputAttacherJoints[1].upperRotationOffset = 0
+  elseif value == "trailerLow" then
+    if self.spec_attachable.inputAttacherJoints[1].attacherHeight <= 0.6 then
+      self.spec_attachable.inputAttacherJoints[1].upperRotationOffset = 0.1
+    else
+      self.spec_attachable.inputAttacherJoints[1].upperRotationOffset = 0
+    end
   end
 end
 
@@ -394,26 +401,35 @@ end
 
 function realAttacherJoints:getIsLowered(superFunc, default)
   local spec = self.spec_foldable
-  if self:getIsFoldMiddleAllowed() then
-    if spec.foldMiddleAnimTime ~= nil and spec.foldMiddleInputButton ~= nil then
-      if spec.foldMoveDirection ~= 0 then
-        if spec.foldMiddleDirection > 0 then
-          if spec.foldAnimTime < spec.foldMiddleAnimTime + 0.01 then
-            return spec.foldMoveDirection < 0 and spec.moveToMiddle ~= true
+
+  local xmlFilename = self.configFileName
+  local xmlFile = loadXMLFile("TempXML", xmlFilename)
+  local value = Utils.getNoNil(getXMLString(xmlFile, "vehicle.attachable.inputAttacherJoints.inputAttacherJoint#jointType"), false)
+
+  if not value == "trailer" then
+    if not value =="trailerLow" then
+      if self:getIsFoldMiddleAllowed() then
+        if spec.foldMiddleAnimTime ~= nil and spec.foldMiddleInputButton ~= nil then
+          if spec.foldMoveDirection ~= 0 then
+            if spec.foldMiddleDirection > 0 then
+              if spec.foldAnimTime < spec.foldMiddleAnimTime + 0.01 then
+                return spec.foldMoveDirection < 0 and spec.moveToMiddle ~= true
+              end
+            else
+              if spec.foldAnimTime > spec.foldMiddleAnimTime - 0.01 then
+                return spec.foldMoveDirection > 0 and spec.moveToMiddle ~= true
+              end
+            end
+          else
+            if spec.foldMiddleDirection > 0 and spec.foldAnimTime < 0.01 then
+              return true
+            elseif spec.foldMiddleDirection < 0 and math.abs(1.0 - spec.foldAnimTime) < 0.01 then
+              return true
+            end
           end
-        else
-          if spec.foldAnimTime > spec.foldMiddleAnimTime - 0.01 then
-            return spec.foldMoveDirection > 0 and spec.moveToMiddle ~= true
-          end
-        end
-      else
-        if spec.foldMiddleDirection > 0 and spec.foldAnimTime < 0.01 then
-          return true
-        elseif spec.foldMiddleDirection < 0 and math.abs(1.0 - spec.foldAnimTime) < 0.01 then
-          return true
+        return false
         end
       end
-    return false
     end
   end
 
