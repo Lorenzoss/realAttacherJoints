@@ -34,7 +34,7 @@ function realAttacherJoints.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onTurnedOn", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onTurnedOff", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onDraw", realAttacherJoints)
-  SpecializationUtil.registerEventListener(vehicleType, "onUpdate", realAttacherJoints)
+  SpecializationUtil.registerEventListener(vehicleType, "onUpdateTick", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onRegisterActionEvents", realAttacherJoints)
 end
 
@@ -102,6 +102,13 @@ function realAttacherJoints:onLoad(savegame)
   local spec = self.spec_attacherJointControl
   local isControllable = false
   for i=1,#self:getInputAttacherJoints() do
+    local xmlFilename = self.configFileName
+    local xmlFile = loadXMLFile("TempXML", xmlFilename)
+    local value = Utils.getNoNil(getXMLString(xmlFile, "vehicle.attachable.inputAttacherJoints.inputAttacherJoint#jointType"), false)
+    if value == "trailer" or value == "trailerLow" then
+      isControllable = false
+      break
+    end
     if self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
       isControllable = false
       break
@@ -184,24 +191,16 @@ function realAttacherJoints:onPreAttachImplement(attachableObject, inputJointDes
 end
 
 function realAttacherJoints:onPreAttach(attacherVehicle, inputJointDescIndex, jointDescIndex)
-  -- Fix for "strange" rotation on first attach
-  for _,v in pairs(attacherVehicle:getAttacherJoints()) do
-    v.lockUpRotLimit = true
-    v.lockDownRotLimit = true
-  end
-
-  -- Fix for trailers bug
   local xmlFilename = self.configFileName
   local xmlFile = loadXMLFile("TempXML", xmlFilename)
   local value = Utils.getNoNil(getXMLString(xmlFile, "vehicle.attachable.inputAttacherJoints.inputAttacherJoint#jointType"), false)
-  if value == "trailer" then
-    --self.spec_attachable.inputAttacherJoints[1].fixedRotation = false
-    self.spec_attachable.inputAttacherJoints[1].upperRotationOffset = 0
-  elseif value == "trailerLow" then
-    if self.spec_attachable.inputAttacherJoints[1].attacherHeight <= 0.6 then
-      self.spec_attachable.inputAttacherJoints[1].upperRotationOffset = 0.1
-    else
-      self.spec_attachable.inputAttacherJoints[1].upperRotationOffset = 0
+  if value == "trailer" or value =="trailerLow" then
+    -- Not good for trailer and trailed equipment
+  else
+    -- Fix for "strange" rotation on first attach
+    for _,v in pairs(attacherVehicle:getAttacherJoints()) do
+      v.lockUpRotLimit = true
+      v.lockDownRotLimit = true
     end
   end
 end
@@ -262,10 +261,15 @@ end
 function realAttacherJoints:onAIImplementEnd()
   local spec = self.spec_attacherJointControl
   local inputAttacherJoints = self:getInputAttacherJoints()
-  local index = realAttacherJoints.implements[self:getFullName()].jointDesc.index
+  local index = 1
+  if self:getFullName() then -- Dedicated server bug ??
+    index = realAttacherJoints.implements[self:getFullName()].jointDesc.index
+  end
   inputAttacherJoints[index].isControllable = true
   if inputAttacherJoints[index] ~= nil and inputAttacherJoints[index].isControllable then
-    local jointDesc = realAttacherJoints.implements[self:getFullName()].jointDesc
+    if self:getFullName() then -- Dedicated server bug ??
+      local jointDesc = realAttacherJoints.implements[self:getFullName()].jointDesc
+    end
     jointDesc.allowsLowering = true
     jointDesc.upperRotationOffsetBackup = jointDesc.upperRotationOffset
     jointDesc.lowerRotationOffsetBackup = jointDesc.lowerRotationOffset
@@ -284,7 +288,7 @@ end
 function realAttacherJoints:onTurnedOff()
 end
 
-function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnoreSelection, isSelected)
+function realAttacherJoints:onUpdateTick(dt, isActiveForInput, isActiveForInputIgnoreSelection, isSelected)
   if not self:getIsAIActive() then
     if self.typeName == "cultivator" or self.typeName == "plow" or self.typeName == "seeder" then
       local spec = self.spec_attacherJointControl
@@ -296,6 +300,7 @@ function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnor
               if spec ~= nil then
                 if spec.heightController ~= nil then
                   local moveAlpha = spec.heightController.moveAlpha
+                  --self.spec_groundReference.groundReferenceNodes[1].depth
                   local specGRN = self.spec_groundReference
                   local specPowerConsumer = self.spec_powerConsumer
                   local implement = self:getFullName()
@@ -312,23 +317,6 @@ function realAttacherJoints:onUpdate(dt, isActiveForInput, isActiveForInputIgnor
                           end
                         end
                       end
-                      -- Follow the ground (?)
-                      --[[if self.spec_groundReference.groundReferenceNodes[1].depth <= 0 then
-                        local spec = self.spec_attacherJointControl
-                        local jointDesc = spec.jointDesc
-                        if moveAlpha == nil then
-                          moveAlpha = jointDesc.moveAlpha
-                        end
-                          moveAlpha = MathUtil.clamp(moveAlpha, jointDesc.upperAlpha, jointDesc.lowerAlpha)
-                        if jointDesc.rotationNode ~= nil then
-                          setRotation(jointDesc.rotationNode, MathUtil.vector3ArrayLerp(jointDesc.upperRotation, jointDesc.lowerRotation, moveAlpha))
-                        end
-                        if jointDesc.rotationNode2 ~= nil then
-                          setRotation(jointDesc.rotationNode2, MathUtil.vector3ArrayLerp(jointDesc.upperRotation2, jointDesc.lowerRotation2, moveAlpha))
-                        end
-                        --spec.lastHeightAlpha = moveAlpha
-                        spec.heightTargetAlpha = moveAlpha
-                      end]]
                     end
                   end
                 end
