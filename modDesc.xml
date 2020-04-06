@@ -1,43 +1,58 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="46">
   <author>Lorenzos</author>
-  <version>0.5.3.0</version>
+  <version>0.5.4.0</version>
   <title>
     <en>Real Attacher Joints</en>
   </title>
   <iconFilename>icon.dds</iconFilename>
   <description>
     <en>
-    <![CDATA[
-      Real Attacher Joints
+    <![CDATA[With this little script, you can manually control the height and the tilt of three points implements.
+Pressing CTRL + KP Minus you can set a custom height (shown by the red point in the custom hud) and by pressing CTRL + KP Plus the tool will go at the set height, pressing again CTRL + KP Plus the tool will raise.
+In addition, this script makes the equipment to require more force to be pulled as the tool is more lowered. That means that if you lower the tool as much as possible it will way more difficult to be pulled compared to a less deep position.
+Be careful that the script is still in a beta version, can occur bugs and Lua errors. If you should have problems or suggestions I beg you to contact me to improve the mod. Thank you!
     ]]>
     </en>
+    <de>
+    <![CDATA[Mit diesem kleinen Skript können Sie die Höhe und Neigung von drei Punktgeräten manuell steuern.
+Durch Drücken von STRG + KP Minus können Sie eine benutzerdefinierte Höhe einstellen (angezeigt durch den roten Punkt im benutzerdefinierten Hud). Durch Drücken von STRG + KP Plus wird das Werkzeug auf die eingestellte Höhe gebracht. Durch erneutes Drücken von STRG + KP Plus wird das Werkzeug angehoben.
+Darüber hinaus erfordert dieses Skript, dass die Ausrüstung mehr Kraft benötigt, um gezogen zu werden, wenn das Werkzeug tiefer abgesenkt wird. Das heißt, wenn Sie das Werkzeug so weit wie möglich absenken, ist das Ziehen im Vergleich zu einer weniger tiefen Position viel schwieriger.
+Achten Sie darauf, dass sich das Skript noch in einer Beta-Version befindet, Fehler und Lua-Fehler auftreten können. Wenn Sie Probleme oder Vorschläge haben sollten, bitte ich Sie, mich zu kontaktieren, um den Mod zu verbessern. Vielen Dank!
+    ]]>
+    </de>
   </description>
   <iconFilename>icon_menu.dds</iconFilename>
   <multiplayer supported="true"/>
   <l10n>
     <text name="input_AXIS_HEIGHT_IMPLEMENT_1">
       <en>Control the implement height</en>
+      <de>Kontrolle der Gerätehöhe</de>
       <it>Controlla l'altezza dell'attrezzo</it>
     </text>
     <text name="input_AXIS_HEIGHT_IMPLEMENT_2">
       <en>Control the implement height</en>
+      <de>Kontrolle der Gerätehöhe</de>
       <it>Controlla l'altezza dell'attrezzo</it>
     </text>
     <text name="input_AXIS_TILT_IMPLEMENT_1">
       <en>Control the implement tilt angle</en>
+      <de>Steuerung des Geräte-Neigungswinkels</de>
       <it>Controlla l'inclinazione dell'attrezzo</it>
     </text>
     <text name="input_AXIS_TILT_IMPLEMENT_2">
       <en>Control the implement tilt angle</en>
+      <de>Steuerung des Geräte-Neigungswinkels</de>
       <it>Controlla l'inclinazione dell'attrezzo</it>
     </text>
     <text name="input_SET_HEIGHT">
-      <en>Set equipment height</en>
+      <en>Set implement height</en>
+      <de>Gerätehöhe einstellen</de>
       <it>Imposta l'altezza del sollevatore</it>
     </text>
     <text name="input_GO_TO_SAVED_HEIGHT">
-      <en>Lower equipment</en>
+      <en>Lower the equipment</en>
+      <de>Absenken der Ausrüstung</de>
       <it>Abbassa l'attrezzo</it>
     </text>
     <!--<text name="input_TOGGLE_MANUAL_CONTROL">
@@ -75,6 +90,7 @@
       <binding device="KB_MOUSE_DEFAULT" input="KEY_lctrl KEY_KP_plus"/>
     </actionBinding>
   </inputBinding>
+  
 	<extraSourceFiles>
 		<sourceFile filename="realAttacherJointsRegister.lua" />
 	</extraSourceFiles>

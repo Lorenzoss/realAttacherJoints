@@ -1,10 +1,15 @@
+---------------------------------------------------------------------
+-- Author: Lorenzos
+-- Date: 27/03/19
+-- Farming Simulator version: 19 -  patch 1.5.1.0
+-- Script version: 0.5.4.0
+---------------------------------------------------------------------
+-- This is my first script in LUA
+-- It's surely written quite bad, but at least it seems to work
+---------------------------------------------------------------------
+
 realAttacherJoints = {}
 realAttacherJoints.modDir = g_currentModDirectory
---[[
-  spec.heightController.moveAlpha = altezza sollevatore
-  jointDesc.lowerRotationOffset = rotazione terzo punto
-]]--
-local modDirectory = g_currentModDirectory
 
 function realAttacherJoints.prerequisitesPresent(specializations)
   if specializations ~= nil then -- << Fix for dataS/scripts/vehicles/SpecializationUtil.lua(103) bad argument 'pairs'
@@ -27,12 +32,9 @@ function realAttacherJoints.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onLoad", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onPreAttachImplement", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onPreAttach", realAttacherJoints)
-  SpecializationUtil.registerEventListener(vehicleType, "onPreDetach", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onPostAttach", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onAIImplementStart", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onAIImplementEnd", realAttacherJoints)
-  SpecializationUtil.registerEventListener(vehicleType, "onTurnedOn", realAttacherJoints)
-  SpecializationUtil.registerEventListener(vehicleType, "onTurnedOff", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onDraw", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onUpdateTick", realAttacherJoints)
   SpecializationUtil.registerEventListener(vehicleType, "onRegisterActionEvents", realAttacherJoints)
@@ -43,21 +45,21 @@ function realAttacherJoints:onRegisterActionEvents(isActiveForInput, isActiveFor
     local spec = self.spec_attacherJointControl
     local isControllable = false
     for i=1,#self:getInputAttacherJoints() do
-      if self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
+      local jointType = self:getInputAttacherJoints()[i].jointType
+      if jointType == 2 or jointType == 3 or jointType == 7 then
+        -- 2 == trailer, 3 == trailerLow, 7 == semitrailer --
         isControllable = false
         break
-      end
-      if self:getInputAttacherJoints()[i].topReferenceNode then
+      elseif self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
+        isControllable = false
+        break
+      else
         isControllable = true
         break
       end
     end
     if isControllable == true then
-      --self:clearActionEventsTable(spec.actionEvents)
       if isActiveForInputIgnoreSelection then
-        --local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.TOGGLE_MANUAL_CONTROL, self, realAttacherJoints.ToggleManualControl, false, true, false, true, nil)
-        --g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_HIGH)
-        --g_inputBinding:setActionEventTextVisibility(actionEventId, true)
         realAttacherJoints.updateImplementControllabe(self)
       end
     end
@@ -72,48 +74,39 @@ function realAttacherJoints.updateImplementControllabe(self)
         local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.SET_HEIGHT, self, realAttacherJoints.SetHeight, false, true, false, true, nil)
         g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_NORMAL)
         g_inputBinding:setActionEventTextVisibility(actionEventId, true)
-        --g_inputBinding:setActionEventText(actionEventId, self.realAttacherJoints.texts.setHeight)
         local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.GO_TO_SAVED_HEIGHT, self, realAttacherJoints.GoToSavedHeight, false, true, false, true, nil)
         g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_NORMAL)
         g_inputBinding:setActionEventTextVisibility(actionEventId, true)
-        --g_inputBinding:setActionEventText(actionEventId, g_i18n:getText("action_GO_TO_SAVED_HEIGHT"))
-
       end
     end
   end
 end
 
 function realAttacherJoints:loadMap()
-  print("Loading realAttacherJoints.lua")
+  print("-------------------------- Loading realAttacherJoints.lua -------------------------")
+  print("---- If you get bugs or errors please send me the log. Thank you ----")
+  print("------------------ github.com/Lorenzoss/realAttacherJoints -----------------")
 end
 
 function realAttacherJoints:onLoad(savegame)
   self.realAttacherJoints = {}
-
   self.realAttacherJoints.square_img = createImageOverlay(realAttacherJoints.modDir .. "gui/sqr.dds")
-  --self.realAttacherJoints.numbers_img = createImageOverlay(realAttacherJoints.modDir .. "gui/numbers.dds")
   self.realAttacherJoints.greenPoint_img = createImageOverlay(realAttacherJoints.modDir .. "gui/greenPoint.dds")
   self.realAttacherJoints.redPoint_img = createImageOverlay(realAttacherJoints.modDir .. "gui/redPoint.dds")
 
-  self.realAttacherJoints.texts = {}
   realAttacherJoints.implements = {}
-  realAttacherJoints.drawUtils = {}
 
   local spec = self.spec_attacherJointControl
   local isControllable = false
   for i=1,#self:getInputAttacherJoints() do
-    local xmlFilename = self.configFileName
-    local xmlFile = loadXMLFile("TempXML", xmlFilename)
-    local value = Utils.getNoNil(getXMLString(xmlFile, "vehicle.attachable.inputAttacherJoints.inputAttacherJoint#jointType"), false)
-    if value == "trailer" or value == "trailerLow" then
+    local jointType = self:getInputAttacherJoints()[i].jointType
+    if jointType == 2 or jointType == 3 or jointType == 7 then
       isControllable = false
       break
-    end
-    if self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
-      isControllable = false
+    elseif self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
+      isControllable = false -- For static three point implements
       break
-    end
-    if self:getInputAttacherJoints()[i].topReferenceNode then
+    else
       isControllable = true
       break
     end
@@ -191,26 +184,23 @@ function realAttacherJoints:onPreAttachImplement(attachableObject, inputJointDes
 end
 
 function realAttacherJoints:onPreAttach(attacherVehicle, inputJointDescIndex, jointDescIndex)
-  local xmlFilename = self.configFileName
-  local xmlFile = loadXMLFile("TempXML", xmlFilename)
-  local value = Utils.getNoNil(getXMLString(xmlFile, "vehicle.attachable.inputAttacherJoints.inputAttacherJoint#jointType"), false)
-  if value == "trailer" or value =="trailerLow" then
-    -- Not good for trailer and trailed equipment
-  else
-    -- Fix for "strange" rotation on first attach
-    for _,v in pairs(attacherVehicle:getAttacherJoints()) do
-      v.lockUpRotLimit = true
-      v.lockDownRotLimit = true
+  if self.spec_attachable then
+    local value = self.spec_attachable.attacherJoint.jointType
+    if value == 2 or value == 3 or value == 7 then
+      -- Not good for trailers and trailed implements
+    else -- Fix for "strange" rotation on first attach
+      for _,v in pairs(attacherVehicle:getAttacherJoints()) do
+        v.lockUpRotLimit = true
+        v.lockDownRotLimit = true
+      end
     end
   end
-end
-
-function realAttacherJoints:onPreDetach(attacherVehicle, implement)
 end
 
 function realAttacherJoints:onPostAttach(attacherVehicle, inputJointDescIndex, jointDescIndex)
   local implement = tostring(self:getFullName())
   local spec = self.spec_attacherJointControl
+  spec.jointDescIndex = inputJointDescIndex
   if implement ~= nil then
     if realAttacherJoints.implements[implement] == nil then -- Create table for equipment for store data
       realAttacherJoints.implements[implement] = {}
@@ -224,22 +214,24 @@ function realAttacherJoints:onPostAttach(attacherVehicle, inputJointDescIndex, j
       -- Save default groundReferenceNode force and powerConsumer maxForce for dynamic force
       local specPowerConsumer = self.spec_powerConsumer
       local specGRN = self.spec_groundReference
-      local xmlFilename = self.configFileName
-      local xmlFile = loadXMLFile("TempXML", xmlFilename)
-      if specGRN ~= nil then
-        if specGRN.hasForceFactors == true then
-          realAttacherJoints.implements[implement].groundReferenceNodes = {}
-          --for i,v in ipairs(specGRN.groundReferenceNodes) do
-            local value = Utils.getNoNil(getXMLFloat(xmlFile, "vehicle.groundReferenceNodes.groundReferenceNode#forceFactor"), 1)
-            realAttacherJoints.implements[implement].groundReferenceNode = value
-            --realAttacherJoints.implements[implement].groundReferenceNodes[i] = specGRN.groundReferenceNode.forceFactor
-          --end
+      if self.configFileName then
+        local xmlFilename = self.configFileName
+        local xmlFile = loadXMLFile("TempXML", xmlFilename)
+        if specGRN ~= nil then
+          if specGRN.hasForceFactors == true then
+            realAttacherJoints.implements[implement].groundReferenceNodes = {}
+            --for i,v in ipairs(specGRN.groundReferenceNodes) do
+              local value = Utils.getNoNil(getXMLFloat(xmlFile, "vehicle.groundReferenceNodes.groundReferenceNode#forceFactor"), 1)
+              realAttacherJoints.implements[implement].groundReferenceNode = value
+              --realAttacherJoints.implements[implement].groundReferenceNodes[i] = specGRN.groundReferenceNode.forceFactor
+            --end
+          end
         end
-      end
-      if specPowerConsumer ~= nil then
-        if specPowerConsumer.maxForce ~= nil then
-          local value = Utils.getNoNil(getXMLFloat(xmlFile, "vehicle.powerConsumer#maxForce"), 50)
-          realAttacherJoints.implements[implement].maxForce = value
+        if specPowerConsumer ~= nil then
+          if specPowerConsumer.maxForce ~= nil then
+            local value = Utils.getNoNil(getXMLFloat(xmlFile, "vehicle.powerConsumer#maxForce"), 50)
+            realAttacherJoints.implements[implement].maxForce = value
+          end
         end
       end
     end
@@ -249,27 +241,24 @@ end
 function realAttacherJoints:onAIImplementStart()
   local spec = self.spec_attacherJointControl
   local inputAttacherJoints = self:getInputAttacherJoints()
-  inputAttacherJoints[spec.jointDesc.index].isControllable = false
-  if spec.jointDesc ~= nil then
-    spec.jointDesc.allowsLowering = true
-    spec.jointDesc.upperRotationOffset = spec.jointDesc.upperRotationOffsetBackup
-    spec.jointDesc.lowerRotationOffset = spec.jointDesc.lowerRotationOffsetBackup
-    spec.jointDesc = nil
+  if spec.jointDescIndex then
+    inputAttacherJoints[spec.jointDescIndex].isControllable = false
+    if spec.jointDesc ~= nil then
+      spec.jointDesc.allowsLowering = true
+      spec.jointDesc.upperRotationOffset = spec.jointDesc.upperRotationOffsetBackup
+      spec.jointDesc.lowerRotationOffset = spec.jointDesc.lowerRotationOffsetBackup
+      spec.jointDesc = nil
+    end
   end
 end
 
 function realAttacherJoints:onAIImplementEnd()
   local spec = self.spec_attacherJointControl
   local inputAttacherJoints = self:getInputAttacherJoints()
-  local index = 1
-  if self:getFullName() then -- Dedicated server bug ??
-    index = realAttacherJoints.implements[self:getFullName()].jointDesc.index
-  end
+  local index = spec.jointDescIndex
   inputAttacherJoints[index].isControllable = true
   if inputAttacherJoints[index] ~= nil and inputAttacherJoints[index].isControllable then
-    if self:getFullName() then -- Dedicated server bug ??
-      local jointDesc = realAttacherJoints.implements[self:getFullName()].jointDesc
-    end
+    local jointDesc = realAttacherJoints.implements[self:getFullName()].jointDesc
     jointDesc.allowsLowering = true
     jointDesc.upperRotationOffsetBackup = jointDesc.upperRotationOffset
     jointDesc.lowerRotationOffsetBackup = jointDesc.lowerRotationOffset
@@ -280,12 +269,6 @@ function realAttacherJoints:onAIImplementEnd()
     spec.heightTargetAlpha = spec.jointDesc.upperAlpha
     self:requestActionEventUpdate()
   end
-end
-
-function realAttacherJoints:onTurnedOn()
-end
-
-function realAttacherJoints:onTurnedOff()
 end
 
 function realAttacherJoints:onUpdateTick(dt, isActiveForInput, isActiveForInputIgnoreSelection, isSelected)
@@ -330,7 +313,6 @@ function realAttacherJoints:onUpdateTick(dt, isActiveForInput, isActiveForInputI
 end
 
 function realAttacherJoints:SetHeight()
-  --print("Save Height Value")
   local implement = self:getFullName()
   if implement ~= nil then
     if realAttacherJoints.implements[implement].isControllable == true then
@@ -347,7 +329,6 @@ function realAttacherJoints:SetHeight()
 end
 
 function realAttacherJoints:GoToSavedHeight()
-  --print("Go to saved height")
   local implement = self:getFullName()
   if implement ~= nil then
     if realAttacherJoints.implements[implement].isControllable == true then
@@ -369,19 +350,14 @@ function realAttacherJoints:GoToSavedHeight()
 end
 
 function realAttacherJoints:ToggleManualControl()
-  print("Toggle manual control")
   local spec = self.spec_attacherJointControl
-  -- Toggle manual control
   if self:getFullName() ~= nil then
     if realAttacherJoints.implements[self:getFullName()].isControllable == true then
       realAttacherJoints:disableManualControl(self)
-      print("manual control disable")
     else
       realAttacherJoints:enableManualControl(self)
-      print("manual control enable")
     end
   end
-  --self:requestActionEventUpdate()
 end
 
 function realAttacherJoints:update(dt)
@@ -389,33 +365,33 @@ end
 
 function realAttacherJoints:getIsLowered(superFunc, default)
   local spec = self.spec_foldable
-
-  local xmlFilename = self.configFileName
-  local xmlFile = loadXMLFile("TempXML", xmlFilename)
-  local value = Utils.getNoNil(getXMLString(xmlFile, "vehicle.attachable.inputAttacherJoints.inputAttacherJoint#jointType"), false)
-
-  if not value == "trailer" then
-    if not value =="trailerLow" then
-      if self:getIsFoldMiddleAllowed() then
-        if spec.foldMiddleAnimTime ~= nil and spec.foldMiddleInputButton ~= nil then
-          if spec.foldMoveDirection ~= 0 then
-            if spec.foldMiddleDirection > 0 then
-              if spec.foldAnimTime < spec.foldMiddleAnimTime + 0.01 then
-                return spec.foldMoveDirection < 0 and spec.moveToMiddle ~= true
+  if self.spec_attachable.attacherJoint then
+    local value = self.spec_attachable.attacherJoint.jointType
+    if value == 2 or value == 3 or value == 7 then
+      -- Nothing
+    else
+      if self.getIsFoldMiddleAllowed then
+        if self:getIsFoldMiddleAllowed() then
+          if spec.foldMiddleAnimTime ~= nil and spec.foldMiddleInputButton ~= nil then
+            if spec.foldMoveDirection ~= 0 then
+              if spec.foldMiddleDirection > 0 then
+                if spec.foldAnimTime < spec.foldMiddleAnimTime + 0.01 then
+                  return spec.foldMoveDirection < 0 and spec.moveToMiddle ~= true
+                end
+              else
+                if spec.foldAnimTime > spec.foldMiddleAnimTime - 0.01 then
+                  return spec.foldMoveDirection > 0 and spec.moveToMiddle ~= true
+                end
               end
             else
-              if spec.foldAnimTime > spec.foldMiddleAnimTime - 0.01 then
-                return spec.foldMoveDirection > 0 and spec.moveToMiddle ~= true
+              if spec.foldMiddleDirection > 0 and spec.foldAnimTime < 0.01 then
+                return true
+              elseif spec.foldMiddleDirection < 0 and math.abs(1.0 - spec.foldAnimTime) < 0.01 then
+                return true
               end
             end
-          else
-            if spec.foldMiddleDirection > 0 and spec.foldAnimTime < 0.01 then
-              return true
-            elseif spec.foldMiddleDirection < 0 and math.abs(1.0 - spec.foldAnimTime) < 0.01 then
-              return true
-            end
+          return false
           end
-        return false
         end
       end
     end
@@ -432,6 +408,7 @@ function realAttacherJoints:getIsLowered(superFunc, default)
       end
     end
   end
+
   return superFunc(self, default)
 end
 
@@ -440,11 +417,14 @@ function realAttacherJoints:onDraw()
     local spec = self.spec_attacherJointControl
     local isControllable = false
     for i=1,#self:getInputAttacherJoints() do
-      if self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
+      local jointType = self:getInputAttacherJoints()[i].jointType
+      if jointType == 2 or jointType == 3 or jointType == 7 then
         isControllable = false
         break
-      end
-      if self:getInputAttacherJoints()[i].topReferenceNode then
+      elseif self:getInputAttacherJoints()[i].upperDistanceToGround == self:getInputAttacherJoints()[i].lowerDistanceToGround then
+        isControllable = false
+        break
+      else
         isControllable = true
         break
       end
@@ -452,23 +432,19 @@ function realAttacherJoints:onDraw()
 
     if isControllable then
       local uiScale = g_gameSettings:getValue("uiScale")
-
       local iconWidth = 0.01 * uiScale
       local iconHeight = iconWidth * g_screenAspectRatio * 7
       local iconWidthPoint = 0.005 * uiScale
       local iconHeightPoint = iconWidth * g_screenAspectRatio / 2
-
       local cruiseOverlay = g_currentMission.inGameMenu.hud.speedMeter.overlay
-      local startX_1 = cruiseOverlay.x + cruiseOverlay.width * 0.65 - 0.02
+
+      local startX_1 = cruiseOverlay.x + cruiseOverlay.width * 0.65 - 0.037
       local startX_2 = startX_1 + 0.0075
       local startY = cruiseOverlay.y + cruiseOverlay.height * 0.9
 
-      realAttacherJoints.drawUtils.startOverlay = startY - iconHeight
-      realAttacherJoints.drawUtils.endOverlay = startY + iconHeight
-
       local fontSize = g_gameSettings:getValue("uiScale") * 0.0125
-
       local angle = 0
+
       if self.spec_attacherJointControl then
         local maxTiltAngle = self.spec_attacherJointControl.maxTiltAngle/2
         local angleRadiant = map(self.spec_attacherJointControl.controls[2].moveAlpha, 0, 1, maxTiltAngle * -1, maxTiltAngle)
@@ -479,16 +455,6 @@ function realAttacherJoints:onDraw()
         setTextAlignment(1) -- 1 = Centre alignment
         renderText(startX_mid, startY + iconHeight, fontSize, angle.."°")
       end
-
-      --[[
-      setTextBold(false)
-      setTextColor(1, 1, 1, 1)
-      local increment = iconHeight/10
-      for i=1,9 do
-        local fontSize = g_gameSettings:getValue("uiScale") * 0.01
-        renderText(startX_1 - 0.01, startY - 0.005 + increment * i, fontSize, i .. "-")
-      end]]
-      --renderOverlay(self.realAttacherJoints.numbers_img, startX_1 - 0.05, startY, iconWidth, iconHeight)
       renderOverlay(self.realAttacherJoints.square_img, startX_1, startY, iconWidth, iconHeight)
       if spec.heightController.moveAlpha then
         renderOverlay(self.realAttacherJoints.greenPoint_img, startX_1+0.0025, map(spec.heightController.moveAlpha, 1, 0, startY + 0.0085, startY + iconHeight - 0.017), iconWidthPoint, iconHeightPoint)
